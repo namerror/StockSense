@@ -1,5 +1,5 @@
 # StockSense
-A stock price predictor
+An AI-powered financial analyst
 
 ## Notes
 The `requirements.txt` file should list all Python libraries that your notebooks
