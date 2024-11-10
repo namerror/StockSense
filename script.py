@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -5,6 +6,8 @@ from plotly import graph_objs as go
 from prophet import Prophet
 from prophet.plot import plot_plotly
 from datetime import datetime, timedelta
+from openai import OpenAI
+from dotenv import load_dotenv
 
 # scraping s&p500 data from wikipedia
 url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
@@ -72,3 +75,25 @@ def run_prophet_forecast(df_train, training_years, forecast_range):
 
 if forecast_button:
     run_prophet_forecast(df_train, training_years, forecast_range)
+
+#OpenAI promptVV
+# Load environment variables from .env file
+load_dotenv()
+
+# Set up the OpenAI client 
+api_key = os.environ["OPENAI_API_KEY"]
+client = OpenAI(api_key=api_key)
+
+prompt = st.text_input("Got any questions? Ask away! ")
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+)
+output = completion.choices[0].message.content
+output
