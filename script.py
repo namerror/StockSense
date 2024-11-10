@@ -47,6 +47,31 @@ fig.layout.update(title_text=f"{selected_stock} Stock price history (close price
                   )
 st.plotly_chart(fig)
 
+# raw data
+st.subheader('Raw Data')
+st.write(df.tail())
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Set up the OpenAI client 
+api_key = os.environ["OPENAI_API_KEY"]
+client = OpenAI(api_key=api_key)
+
+# Summarize Raw data
+completion1 = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": f"Summarize {df.tail()} such that it is easy to understand its overview and trends"
+        }
+    ]
+)
+output1 = completion1.choices[0].message.content
+output1
+
 # preparation
 df_train = df.reset_index()[["Date", "Close"]]
 df_train["Date"] = df_train["Date"].dt.tz_localize(None) # Remove timezone
@@ -76,13 +101,7 @@ def run_prophet_forecast(df_train, training_years, forecast_range):
 if forecast_button:
     run_prophet_forecast(df_train, training_years, forecast_range)
 
-#OpenAI promptVV
-# Load environment variables from .env file
-load_dotenv()
-
-# Set up the OpenAI client 
-api_key = os.environ["OPENAI_API_KEY"]
-client = OpenAI(api_key=api_key)
+#OpenAI prompt
 
 prompt = st.text_input("Got any questions? Ask away! ")
 completion = client.chat.completions.create(
