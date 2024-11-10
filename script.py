@@ -2,7 +2,9 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 from plotly import graph_objs as go
-# from datetime import date
+from prophet import Prophet
+from prophet.plot import plot_plotly
+from datetime import datetime, timedelta
 
 # scraping s&p500 data from wikipedia
 url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
@@ -31,13 +33,42 @@ def load_stock_data(ticker):
 
     return data
 
+# plotting the graph
 df = load_stock_data(selected_stock)
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=df.index, y=df["Close"], name="Close Price"))
-fig.layout.update(title_text=f"{selected_stock} Stock price history",
+fig.layout.update(title_text=f"{selected_stock} Stock price history (close price)",
                   xaxis_rangeslider_visible=True,
                   xaxis_title="Date",
                   yaxis_title="Price"
                   )
-
 st.plotly_chart(fig)
+
+# preparation
+df_train = df.reset_index()[["Date", "Close"]]
+df_train["Date"] = df_train["Date"].dt.tz_localize(None) # Remove timezone
+max_years = pd.Timestamp.now().year - df_train["Date"].iloc[0].year
+
+st.write("[Prophet](%s) is a forecasting tool that can be used to predict future trends" % "https://facebook.github.io/prophet/")
+forecast_button = st.button('Run forecast with Prophet')
+forecast_range = st.slider("Time of prediction(days)", 1, 1460)
+training_years = st.slider("Select training data(years)", 1, max_years, 5) # how many years back are the training data
+
+def run_prophet_forecast(df_train, training_years, forecast_range):
+    start_date = datetime.now() - timedelta(days=training_years*365)
+    df_train = df_train[df_train["Date"] >= start_date] # filter the range
+    df_train.columns = ['ds', 'y']
+    model = Prophet()
+    model.fit(df_train)
+    future_df = model.make_future_dataframe(periods=forecast_range)
+    forecast = model.predict(future_df)
+    fig_forecast = plot_plotly(model, forecast)
+    f_title = f"{selected_stock} Stock forecast for the next {forecast_range} day(s) based on recent {training_years} years"
+    fig_forecast.layout.update(title_text=f_title,
+                               xaxis_rangeslider_visible=True,
+                               xaxis_title="Date",
+                               yaxis_title="Price")
+    st.plotly_chart(fig_forecast)
+
+if forecast_button:
+    run_prophet_forecast(df_train, training_years, forecast_range)
