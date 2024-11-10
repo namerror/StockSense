@@ -119,7 +119,7 @@ def get_ai_summary_plus(financial_info, api_key):
         messages=[{"role": "user", "content": data_summary}]
     )
 
-    summary = response['choices'][0]['message']['content']
+    summary = response.choices[0].message.content
     return summary
 
 # @st.cache_data
@@ -134,7 +134,7 @@ def get_ai_summary_plus(financial_info, api_key):
 #         messages=[{"role": "user", "content": data_summary}]
 #     )
 
-#     summary = response['choices'][0]['message']['content']
+#     summary = response.choices[0].message.content
 #     return summary
 
 st.markdown("##### Integrated ChatGPT summary")
