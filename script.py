@@ -115,7 +115,7 @@ def get_ai_summary_plus(financial_info, api_key):
     """
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": data_summary}]
     )
 
