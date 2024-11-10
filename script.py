@@ -51,6 +51,10 @@ fig.layout.update(title_text=f"{selected_stock} Stock price history (close price
                   )
 st.plotly_chart(fig)
 
+# raw data
+st.write('Example Raw Data')
+st.write(df.tail())
+
 # preparation
 df_train = df.reset_index()[["Date", "Close"]]
 df_train["Date"] = df_train["Date"].dt.tz_localize(None) # Remove timezone
@@ -87,6 +91,7 @@ def run_prophet_forecast(df_train, training_years, forecast_range):
 
 if forecast_button:
     run_prophet_forecast(df_train, training_years, forecast_range)
+
 
 # using OpenAI to summarize financial situation of the company
 
@@ -147,3 +152,22 @@ if generate_response:
             st.write(ai_summary)
         except:
             st.warning("Invalid API key")
+
+#OpenAI prompt
+try:
+    client = OpenAI(api_key=openai_api_key)
+    prompt = st.text_input("Got any questions? Ask away! ")
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+    output = completion.choices[0].message.content
+    st.write(output)
+except:
+    st.write("something went wrong.")
