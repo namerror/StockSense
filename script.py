@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -7,7 +6,6 @@ from prophet import Prophet
 from prophet.plot import plot_plotly
 from datetime import datetime, timedelta
 from openai import OpenAI
-from dotenv import load_dotenv
 
 # scraping s&p500 data from wikipedia
 url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
@@ -53,10 +51,6 @@ fig.layout.update(title_text=f"{selected_stock} Stock price history (close price
                   )
 st.plotly_chart(fig)
 
-# raw data
-st.subheader('Raw Data')
-st.write(df.tail())
-
 # preparation
 df_train = df.reset_index()[["Date", "Close"]]
 df_train["Date"] = df_train["Date"].dt.tz_localize(None) # Remove timezone
@@ -97,13 +91,10 @@ if forecast_button:
 # using OpenAI to summarize financial situation of the company
 
 financial_info = load_financial_info(selected_stock)
-api_key = os.environ["OPENAI_API_KEY"]
-client = OpenAI(api_key=api_key)
+
 
 @st.cache_data
 def get_ai_summary_plus(financial_info, api_key):
-    financial_info=load_financial_info(selected_stock)
-    api_key = os.environ["OPENAI_API_KEY"]
     client = OpenAI(api_key=api_key)
     data_summary = f"""
     Based on the current financial information (provided below) for {financial_info['longName']}, summarize and comment on the company's financial position:
@@ -119,7 +110,7 @@ def get_ai_summary_plus(financial_info, api_key):
     """
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": data_summary}]
     )
 
@@ -142,25 +133,17 @@ def get_ai_summary_plus(financial_info, api_key):
 #     return summary
 
 st.markdown("##### Integrated ChatGPT summary")
-
+openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+"[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
+"[View the source code](https://github.com/namerror/StockSense)"
 generate_response = st.button("Generate financial summary")
 if generate_response:
-    ai_summary = get_ai_summary_plus(financial_info, api_key)
-    st.markdown("## Financial summary (AI generated)")
-    st.write(ai_summary)
-
-#OpenAI prompt
-
-prompt = st.text_input("Got any questions? Ask away! ")
-completion = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
-)
-output = completion.choices[0].message.content
-output
+    if not openai_api_key:
+        st.info("Please add your OpenAI API key to continue.")
+    else:
+        try:
+            ai_summary = get_ai_summary_plus(financial_info, openai_api_key)
+            st.markdown("## Financial summary (AI generated)")
+            st.write(ai_summary)
+        except:
+            st.warning("Invalid API key")
