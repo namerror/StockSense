@@ -170,4 +170,4 @@ try:
     output = completion.choices[0].message.content
     st.write(output)
 except:
-    st.write("something went wrong.")
+    st.info("To ask chatgpt, you need to enter a valid api.")
